@@ -4,11 +4,15 @@
     <div class="container">
       <div class="row justify-content-md-center mt-3">
         <div class="col-12 col-md-6">
-          <TodoList :todos="todos" v-on:listTodos="getListTodos" />
+          <TodoList :todos="todos" v-on:listTodos="getListTodos" :selectedIndex="selectedIndex" />
           <NewTodo v-on:addNew="addNew" />
         </div>
         <div class="col-12 col-md-6">
-          <Todo :listTodos="arrListTodos" />
+          <Todo
+            :listTodos="arrListTodos"
+            v-on:updateTodo="updateTodo"
+            v-on:deleteTodo="deleteTodo"
+          />
         </div>
       </div>
     </div>
@@ -20,7 +24,12 @@ import Header from "./components/Header";
 import TodoList from "./components/TodoList";
 import Todo from "./components/Todo";
 import NewTodo from "./components/NewTodo";
-import $ from "../node_modules/jquery";
+
+var method = {
+  get: "todolists",
+  post: "todolist",
+  deleteTodoItem: `todolist/{0}/todoitem/{1}`
+};
 
 export default {
   name: "app",
@@ -49,17 +58,16 @@ export default {
   data() {
     return {
       URL: "https://todoes-list.herokuapp.com/",
-      method: {
-        get: "todolists",
-        post: "todolist"
-      },
+      method: method,
       todos: [],
-      arrListTodos: null
+      arrListTodos: null,
+      selectedIndex: 0
     };
   },
   methods: {
-    getListTodos(arr) {
-      this.arrListTodos = arr;
+    getListTodos(obj) {
+      this.arrListTodos = obj.todo;
+      this.selectedIndex = obj.index;
     },
     addNew(todo) {
       this.$http.post(this.URL + this.method.post, todo).then(
@@ -67,16 +75,61 @@ export default {
           console.log(response);
         },
         err => {
-          console.log(err);
+          alert(err.body.message);
         }
       );
+    },
+    updateTodo(todo) {
+      this.$http.put(this.URL + this.method.post + "/" + todo._id, todo).then(
+        response => {
+          console.log("Updated");
+          this.todos[this.selectedIndex] = todo;
+        },
+        err => {
+          console.log(err);
+          alert(err.body.message);
+        }
+      );
+    },
+    deleteTodo(obj) {
+      let listTodo = obj.listTodo;
+      let todo = obj.todo;
+      this.$http
+        .delete(
+          this.URL +
+            this.method.post +
+            "/" +
+            listTodo._id +
+            "/todoitem/" +
+            todo._id
+        )
+        .then(
+          response => {
+            listTodo.list.splice(obj.index, 1);
+          },
+          err => {
+            console.log(err);
+            alert(err.body.message);
+          }
+        );
     }
   },
   watch: {},
   mounted() {
-    this.$http.get(this.URL + this.method.get).then(data => {
-      this.todos = data.body;
-    });
+    this.$http.get(this.URL + this.method.get).then(
+      data => {
+        this.todos = data.body;
+        //
+        this.getListTodos({
+          todo: this.todos[0],
+          index: 0
+        });
+      },
+      err => {
+        console.log(err);
+        alert(err.body.message);
+      }
+    );
   }
 };
 </script>
