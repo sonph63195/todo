@@ -97,11 +97,7 @@ export default {
       this.$http
         .delete(
           this.URL +
-            this.method.post +
-            "/" +
-            listTodo._id +
-            "/todoitem/" +
-            todo._id
+            String.format(this.method.deleteTodoItem, listTodo._id, todo._id)
         )
         .then(
           response => {
