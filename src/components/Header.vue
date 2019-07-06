@@ -15,12 +15,12 @@
       </button>
 
       <div class="collapse navbar-collapse" id="navbarSupportedContent">
-        <ul class="navbar-nav mr-auto">
+        <ul v-if="loggedIn" class="navbar-nav mr-auto">
           <li class="nav-item">
-            <span>
-              Complete
-              <span class="badge bg-primary text-white">{{ countDone }}/{{ total }}</span>
-            </span>
+            <span class="nav-link" v-text="user"></span>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" @click="$emit('logout')">Logout</a>
           </li>
         </ul>
       </div>
@@ -31,8 +31,22 @@
 <script>
 export default {
   props: {
-    countDone: Number,
-    total: Number
+    loggedIn: Boolean
+  },
+  data() {
+    return {
+      user: null
+    };
+  },
+  watch: {
+    loggedIn: {
+      immediate: false,
+      handler() {
+        if (this.loggedIn) {
+          this.user = this.$cookies.get("user").username;
+        }
+      }
+    }
   }
 };
 </script>

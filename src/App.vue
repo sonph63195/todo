@@ -1,35 +1,43 @@
 <template>
   <div id="app">
-    <Header :countDone="0" :total="0" />
-    <div class="container">
-      <div class="row justify-content-md-center mt-3">
-        <div class="col-12 col-md-6">
-          <TodoList :todos="todos" v-on:listTodos="getListTodos" :selectedIndex="selectedIndex" />
-          <NewTodo v-on:addNew="addNew" />
-        </div>
-        <div class="col-12 col-md-6">
+    <Header v-on:logout="logout" :loggedIn="loggedIn" />
+    <b-container>
+      <b-row v-if="loggedIn">
+        <b-col cols="12" md="6">
+          <TodoList :todos="todos" :selectedIndex="selectedIndex" v-on:showTodo="showTodo" />
+        </b-col>
+        <b-col cols="12" md="6">
           <Todo
-            :listTodos="arrListTodos"
-            v-on:updateTodo="updateTodo"
-            v-on:deleteTodo="deleteTodo"
-          />
-        </div>
+            v-if="selectedTodo != null"
+            :todo="selectedTodo"
+            v-on:updateTodo="todos[selectedIndex] = $event"
+          ></Todo>
+        </b-col>
+      </b-row>
+      <div v-if="!loggedIn" class="show-login_form">
+        <UserAuthorized :message="message.err" v-on:login="authorizedUser"></UserAuthorized>
       </div>
-    </div>
+    </b-container>
+    <!-- -->
   </div>
 </template>
 
 <script>
+import "bootstrap/dist/css/bootstrap.css";
+import "bootstrap-vue/dist/bootstrap-vue.css";
+
 import Header from "./components/Header";
 import TodoList from "./components/TodoList";
 import Todo from "./components/Todo";
 import NewTodo from "./components/NewTodo";
+import UserAuthorized from "./components/UserAuthorized";
 
 var method = {
   get: "todolists",
-  post: "todolist",
-  deleteTodoItem: `todolist/{0}/todoitem/{1}`
+  post: "todolist"
 };
+
+var loggedIn = false;
 
 export default {
   name: "app",
@@ -38,58 +46,76 @@ export default {
     Header,
     TodoList,
     Todo,
-    NewTodo
-  },
-  head: {
-    script: [
-      {
-        src: "https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js"
-      },
-      {
-        src:
-          "https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
-      },
-      {
-        src:
-          "https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
-      }
-    ]
+    NewTodo,
+    UserAuthorized
   },
   data() {
     return {
       URL: "https://todoes-list.herokuapp.com/",
       method: method,
-      todos: [],
-      arrListTodos: null,
-      selectedIndex: 0
+      todos: [], //list todo
+      selectedIndex: null,
+      selectedTodo: null,
+      loggedIn: loggedIn,
+      message: { err: [] }
     };
   },
   methods: {
-    getListTodos(obj) {
-      this.arrListTodos = obj.todo;
+    getTodo() {
+      this.loggedIn = this.$cookies.isKey("user");
+      if (this.loggedIn) {
+        // get list todo
+        this.$http
+          .get(this.URL + this.method.get, {
+            headers: {
+              Authorization: "Bearer " + this.$cookies.get("user").token
+            }
+          })
+          .then(
+            data => {
+              this.todos = data.body;
+            },
+            err => {
+              console.log(err.body.message);
+            }
+          );
+      }
+    },
+    showTodo(obj) {
       this.selectedIndex = obj.index;
+      this.selectedTodo = obj.todo;
     },
     addNew(todo) {
-      this.$http.post(this.URL + this.method.post, todo).then(
-        response => {
-          console.log(response);
-        },
-        err => {
-          alert(err.body.message);
-        }
-      );
+      console.log("Add new ");
+      this.$http
+        .post(this.URL + this.method.post, todo, {
+          headers: { Authorization: "Bearer " + $cookies.get("user") }
+        })
+        .then(
+          response => {
+            console.log(response);
+            this.todos.push(response.body);
+          },
+          err => {
+            alert(err.body.message);
+          }
+        );
     },
     updateTodo(todo) {
-      this.$http.put(this.URL + this.method.post + "/" + todo._id, todo).then(
-        response => {
-          console.log("Updated");
-          this.todos[this.selectedIndex] = todo;
-        },
-        err => {
-          console.log(err);
-          alert(err.body.message);
-        }
-      );
+      this.$http
+        .put(this.URL + this.method.post + "/" + todo._id, todo, {
+          headers: { Authorization: "Bearer " + $cookies.get("user") }
+        })
+        .then(
+          response => {
+            console.log("Updated");
+            this.todos[this.selectedIndex] = todo;
+          },
+          err => {
+            console.log(err);
+            alert(err.body.message);
+          }
+        );
     },
     deleteTodo(obj) {
       let listTodo = obj.listTodo;
@@ -97,7 +123,11 @@ export default {
       this.$http
         .delete(
           this.URL +
-            String.format(this.method.deleteTodoItem, listTodo._id, todo._id)
+            this.method.post +
+            "/todolist/" +
+            listTodo._id +
+            "/todoitem/" +
+            todo._id
         )
         .then(
           response => {
@@ -108,44 +138,37 @@ export default {
             alert(err.body.message);
           }
         );
+    },
+    authorizedUser(user) {
+      this.$http.post(this.URL + "login", user).then(
+        response => {
+          let authorized = {
+            username: user.username,
+            token: response.body.jwtToken
+          };
+          $cookies.set("user", authorized);
+          // get list todo of user
+          this.getTodo();
+        },
+        err => {
+          this.message.err = [];
+          this.message.err.push(err.body.message);
+          console.log(err);
+        }
+      );
+    },
+    logout() {
+      this.$cookies.remove("user");
+      this.loggedIn = false;
     }
   },
   watch: {},
   mounted() {
-    this.$http.get(this.URL + this.method.get).then(
-      data => {
-        this.todos = data.body;
-        //
-        this.getListTodos({
-          todo: this.todos[0],
-          index: 0
-        });
-      },
-      err => {
-        console.log(err);
-        alert(err.body.message);
-      }
-    );
+    this.getTodo();
   }
 };
 </script>
 
 <style>
 @import url("../node_modules/bootstrap/dist/css/bootstrap.min.css");
-#app {
-  font-family: "Avenir", Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  color: #2c3e50;
-}
-.isDone {
-  text-decoration: line-through !important;
-}
-
-.list-group-item button {
-  opacity: 0;
-}
-.list-group-item:hover button {
-  opacity: 1;
-}
 </style>
