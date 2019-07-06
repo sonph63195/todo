@@ -5,6 +5,7 @@
       <b-row v-if="loggedIn">
         <b-col cols="12" md="6">
           <TodoList :todos="todos" :selectedIndex="selectedIndex" v-on:showTodo="showTodo" />
+          <NewTodo v-on:addNew="addNew"></NewTodo>
         </b-col>
         <b-col cols="12" md="6">
           <Todo
@@ -15,7 +16,7 @@
         </b-col>
       </b-row>
       <div v-if="!loggedIn" class="show-login_form">
-        <UserAuthorized :message="message.err" v-on:login="authorizedUser"></UserAuthorized>
+        <UserAuthorized v-on:login="login"></UserAuthorized>
       </div>
     </b-container>
     <!-- -->
@@ -26,19 +27,17 @@
 import "bootstrap/dist/css/bootstrap.css";
 import "bootstrap-vue/dist/bootstrap-vue.css";
 
+// Import component
 import Header from "./components/Header";
 import TodoList from "./components/TodoList";
 import Todo from "./components/Todo";
 import NewTodo from "./components/NewTodo";
 import UserAuthorized from "./components/UserAuthorized";
 
-var method = {
-  get: "todolists",
-  post: "todolist"
-};
+// Import Mixins
+import { serverAPIsMixin } from "./components/mixins/serverAPIsMixin";
 
-var loggedIn = false;
-
+// code
 export default {
   name: "app",
 
@@ -49,28 +48,27 @@ export default {
     NewTodo,
     UserAuthorized
   },
+
+  mixins: [serverAPIsMixin],
+
   data() {
     return {
-      URL: "https://todoes-list.herokuapp.com/",
-      method: method,
       todos: [], //list todo
       selectedIndex: null,
       selectedTodo: null,
-      loggedIn: loggedIn,
-      message: { err: [] }
+      loggedIn: false
     };
+  },
+  created() {
+    this.getTodo();
   },
   methods: {
     getTodo() {
-      this.loggedIn = this.$cookies.isKey("user");
+      this.loggedIn = this.isLogged();
       if (this.loggedIn) {
         // get list todo
         this.$http
-          .get(this.URL + this.method.get, {
-            headers: {
-              Authorization: "Bearer " + this.$cookies.get("user").token
-            }
-          })
+          .get(this.URL + this.method.todoGet, this.getRequestHeader())
           .then(
             data => {
               this.todos = data.body;
@@ -88,9 +86,7 @@ export default {
     addNew(todo) {
       console.log("Add new ");
       this.$http
-        .post(this.URL + this.method.post, todo, {
-          headers: { Authorization: "Bearer " + $cookies.get("user") }
-        })
+        .post(this.URL + this.method.todoPost, todo, this.getRequestHeader())
         .then(
           response => {
             console.log(response);
@@ -101,71 +97,14 @@ export default {
           }
         );
     },
-    updateTodo(todo) {
-      this.$http
-        .put(this.URL + this.method.post + "/" + todo._id, todo, {
-          headers: { Authorization: "Bearer " + $cookies.get("user") }
-        })
-        .then(
-          response => {
-            console.log("Updated");
-            this.todos[this.selectedIndex] = todo;
-          },
-          err => {
-            console.log(err);
-            alert(err.body.message);
-          }
-        );
-    },
-    deleteTodo(obj) {
-      let listTodo = obj.listTodo;
-      let todo = obj.todo;
-      this.$http
-        .delete(
-          this.URL +
-            this.method.post +
-            "/todolist/" +
-            listTodo._id +
-            "/todoitem/" +
-            todo._id
-        )
-        .then(
-          response => {
-            listTodo.list.splice(obj.index, 1);
-          },
-          err => {
-            console.log(err);
-            alert(err.body.message);
-          }
-        );
-    },
-    authorizedUser(user) {
-      this.$http.post(this.URL + "login", user).then(
-        response => {
-          let authorized = {
-            username: user.username,
-            token: response.body.jwtToken
-          };
-          $cookies.set("user", authorized);
-          // get list todo of user
-          this.getTodo();
-        },
-        err => {
-          this.message.err = [];
-          this.message.err.push(err.body.message);
-          console.log(err);
-        }
-      );
+    login() {
+      this.getTodo();
     },
     logout() {
-      this.$cookies.remove("user");
-      this.loggedIn = false;
+      this.loggedIn = this.isLogged();
     }
   },
-  watch: {},
-  mounted() {
-    this.getTodo();
-  }
+  watch: {}
 };
 </script>
 

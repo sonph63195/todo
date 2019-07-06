@@ -3,8 +3,8 @@
     <b-col cols="12" md="6">
       <h3 class="display-4">Login</h3>
       <div>
-        <b-alert v-if="message.length > 0" variant="danger" dismissible show>
-          <p class="mb-0" v-for="(msg, index) in message" :key="index" v-text="msg"></p>
+        <b-alert v-if="message != null" variant="danger" dismissible show>
+          <p class="mb-0" v-text="message"></p>
         </b-alert>
       </div>
       <div class="login-form">
@@ -28,11 +28,7 @@
             ></b-form-input>
           </b-form-group>
           <div class="form-action">
-            <b-button
-              type="submit"
-              variant="primary"
-              @click.prevent="$emit('login', user); loading = true"
-            >
+            <b-button type="submit" variant="primary" @click.prevent="login">
               <span v-if="!loading">Login</span>
               <span v-if="loading">Please wait...</span>
             </b-button>
@@ -44,25 +40,38 @@
 </template>
 
 <script>
+// Import Mixins
+import { serverAPIsMixin } from "./mixins/serverAPIsMixin";
+
 export default {
-  props: {
-    message: Array
-  },
+  mixins: [serverAPIsMixin],
   data() {
     return {
       user: {
         username: null,
         password: null
       },
-      loading: false
+      loading: false,
+      message: null
     };
   },
-  watch: {
-    message: {
-      immediate: false,
-      handler() {
-        this.loading = false;
-      }
+  methods: {
+    login() {
+      this.loading = true;
+      this.$http.post(this.URL + this.method.userLogin, this.user).then(
+        response => {
+          let user = {
+            username: this.user.username,
+            token: response.body.jwtToken
+          };
+          this.$cookies.set("user", user);
+          this.$emit("login");
+        },
+        err => {
+          this.message = err.body.message;
+          this.loading = false;
+        }
+      );
     }
   }
 };

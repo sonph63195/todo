@@ -61,7 +61,7 @@
             <b-form-group id="note-group" label="Note:" label-for="note">
               <b-form-textarea id="description" v-model="newTodoTask.note"></b-form-textarea>
             </b-form-group>
-            <b-button type="submit" variant="primary" @click.prevent="addNew(); loading = true">
+            <b-button type="submit" variant="primary" @click.prevent="addNewItem()">
               <span v-if="!loading">Add new</span>
               <span v-if="loading">Please wait...</span>
             </b-button>
@@ -88,22 +88,24 @@
       </div>
     </div>
     <b-alert
-      v-if="alert.err.length > 0 || alert.success.length > 0"
       :show="alert.dismissCountDown"
       :fade="true"
       dismissible
-      variant="info"
+      :variant="alert.type"
       @dismissed="alert.dismissCountDown=0"
       class="fixed-bottom mb-0 align-middle text-center"
     >
-      <p class="m-0" v-for="(msg, index) in alert.err" :key="index" v-html="msg"></p>
-      <p class="m-0" v-for="(msg, index) in alert.success" :key="index" v-html="msg"></p>
+      <p class="m-0" v-html="alert.message"></p>
     </b-alert>
   </section>
 </template>
 
 <script>
+// Import Mixins
+import { serverAPIsMixin } from "./mixins/serverAPIsMixin";
+
 export default {
+  mixins: [serverAPIsMixin],
   props: {
     todo: Object
   },
@@ -122,10 +124,10 @@ export default {
       },
       selectedTask: {},
       alert: {
-        dismissSecs: 10,
+        dismissSecs: 5,
         dismissCountDown: 0,
-        err: [],
-        success: []
+        message: null,
+        type: "info"
       }
     };
   },
@@ -141,44 +143,54 @@ export default {
         remindTime: "2019-11-11T17:00:00.000Z",
         subTodo: []
       };
+      this.loading = false;
     },
-    addNew() {
+    showAlert(msg, type) {
+      this.alert.message = msg;
+      this.alert.type = type;
+      this.alert.dismissCountDown = this.alert.dismissSecs;
+    },
+    addNewItem() {
+      this.loading = true;
       this.$http
         .post(
-          `https://todoes-list.herokuapp.com/todolist/${this.todo._id}/todoitem`,
+          `${this.URL}${this.method.todoPost}/${this.todo._id}/todoitem`,
           this.newTodoTask,
-          {
-            headers: { Authorization: "Bearer " + $cookies.get("user").token }
-          }
+          this.getRequestHeader()
         )
         .then(
           response => {
             this.list.push(response.body);
             this.$refs["addNewTodoTask"].hide();
             this.reset();
-            this.loading = false;
+            //show notify for user.
+            this.showAlert("Added successful.", "info");
           },
           err => {
-            console.log(err);
+            //console.log(err);
             this.$refs["addNewTodoTask"].hide();
-            this.loading = false;
+            this.reset();
+            //show notify for user.
+            this.showAlert(err.body.message, "danger");
           }
         );
     },
     removeTodoTask(task, index) {
       this.$http
         .delete(
-          `https://todoes-list.herokuapp.com/todolist/${this.todo._id}/todoitem/${task._id}`,
-          {
-            headers: { Authorization: "Bearer " + $cookies.get("user").token }
-          }
+          `${this.URL}${this.method.todoPost}/${this.todo._id}/todoitem/${task._id}`,
+          this.getRequestHeader()
         )
         .then(
           response => {
             this.list.splice(index, 1);
+            //show notify for user.
+            this.showAlert("Removed.", "warning");
           },
           err => {
             console.log(err);
+            //show notify for user.
+            this.showAlert(err.body.message, "danger");
           }
         );
     },
@@ -187,31 +199,25 @@ export default {
       //
       this.$http
         .put(
-          `https://todoes-list.herokuapp.com/todolist/${this.todo._id}`,
+          `${this.URL}${this.method.todoPost}/${this.todo._id}`,
           this.todo,
-          {
-            headers: { Authorization: "Bearer " + $cookies.get("user").token }
-          }
+          this.getRequestHeader()
         )
         .then(
           response => {
+            this.reset();
+            this.$refs["editTodoTask"].hide();
             // update todo in the list
             //this.todo = response.body;
             this.$emit("updateTodo", response.body);
             //show notify for user.
-            this.alert.success = [];
-            this.alert.success.push("Save successful.");
-            this.alert.dismissCountDown = this.alert.dismissSecs;
+            this.showAlert("Save successful.", "success");
           },
           err => {
-            this.alert.err = [];
-            this.alert.err.push(err.body);
-            this.alert.dismissCountDown = this.alert.dismissSecs;
+            this.showAlert(err.body.message, "danger");
           }
         );
       //
-      this.loading = false;
-      this.$refs["editTodoTask"].hide();
     }
   },
   watch: {
