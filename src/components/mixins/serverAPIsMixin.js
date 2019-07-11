@@ -5,7 +5,8 @@ export const serverAPIsMixin = {
       method: {
         todoGet: "todolists",
         todoPost: "todolist",
-        userLogin: "login/"
+        userLogin: "login",
+        user: "user"
       }
     };
   },

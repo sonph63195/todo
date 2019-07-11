@@ -3,7 +3,7 @@
     <b-col cols="12" md="6">
       <h3 class="display-4">Login</h3>
       <div>
-        <b-alert v-if="message != null" variant="danger" dismissible show>
+        <b-alert v-if="message != null" variant="danger" show>
           <p class="mb-0" v-text="message"></p>
         </b-alert>
       </div>
@@ -36,14 +36,22 @@
         </b-form>
       </div>
     </b-col>
+    <b-col cols="12" md="6">
+      <UserRegister></UserRegister>
+    </b-col>
   </b-row>
 </template>
 
 <script>
+import UserRegister from "./UserRegister";
+
 // Import Mixins
 import { serverAPIsMixin } from "./mixins/serverAPIsMixin";
 
 export default {
+  components: {
+    UserRegister
+  },
   mixins: [serverAPIsMixin],
   data() {
     return {
@@ -65,7 +73,7 @@ export default {
             token: response.body.jwtToken
           };
           this.$cookies.set("user", user);
-          this.$emit("login");
+          this.$emit("login"); // call to App.vue
         },
         err => {
           this.message = err.body.message;

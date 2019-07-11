@@ -1,5 +1,5 @@
 <template>
-  <nav class="navbar navbar-expand-lg navbar-light bg-light">
+  <nav class="navbar navbar-expand-lg navbar-light bg-warning">
     <div class="container">
       <a class="navbar-brand" href="/">My todo</a>
       <button
@@ -15,7 +15,7 @@
       </button>
 
       <div class="collapse navbar-collapse" id="navbarSupportedContent">
-        <ul v-if="loggedIn" class="navbar-nav mr-auto">
+        <ul v-if="loggedIn" class="navbar-nav ml-auto">
           <li class="nav-item">
             <span v-if="user != null" class="nav-link" v-text="user.username"></span>
           </li>

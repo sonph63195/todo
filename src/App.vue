@@ -1,25 +1,38 @@
 <template>
   <div id="app">
     <Header v-on:logout="logout" :loggedIn="loggedIn" />
-    <b-container>
+    <b-container fluid>
       <b-row v-if="loggedIn">
-        <b-col cols="12" md="6">
+        <b-col cols="12" md="4" lg="3" class="todo-sidebar bg-light border-right">
           <TodoList :todos="todos" :selectedIndex="selectedIndex" v-on:showTodo="showTodo" />
           <NewTodo v-on:addNew="addNew"></NewTodo>
         </b-col>
-        <b-col cols="12" md="6">
+        <b-col cols="12" md="4" lg="6">
           <Todo
             v-if="selectedTodo != null"
             :todo="selectedTodo"
+            :taskStepEdit.sync="taskStepEdit"
             v-on:updateTodo="todos[selectedIndex] = $event"
+            v-on:show-step="showStep"
+            v-on:update:taskStepEdit="taskStepEdit = $event"
           ></Todo>
         </b-col>
+        <b-col cols="12" md="4" lg="3" class="todo-sidebar bg-light border-left">
+          <StepList
+            v-if="selectedTask != null"
+            :task="selectedTask"
+            v-on:update="taskStepEdit = true;"
+          ></StepList>
+        </b-col>
       </b-row>
+    </b-container>
+    <b-container>
       <div v-if="!loggedIn" class="show-login_form">
         <UserAuthorized v-on:login="login"></UserAuthorized>
       </div>
     </b-container>
     <!-- -->
+    <div class="footer p-3 text-center border-top">Create by Huangshan</div>
   </div>
 </template>
 
@@ -33,11 +46,13 @@ import TodoList from "./components/TodoList";
 import Todo from "./components/Todo";
 import NewTodo from "./components/NewTodo";
 import UserAuthorized from "./components/UserAuthorized";
+import StepList from "./components/StepList";
 
 // Import Mixins
 import { serverAPIsMixin } from "./components/mixins/serverAPIsMixin";
 
 // code
+/* eslint-disable */
 export default {
   name: "app",
 
@@ -46,7 +61,8 @@ export default {
     TodoList,
     Todo,
     NewTodo,
-    UserAuthorized
+    UserAuthorized,
+    StepList
   },
 
   mixins: [serverAPIsMixin],
@@ -56,7 +72,9 @@ export default {
       todos: [], //list todo
       selectedIndex: null,
       selectedTodo: null,
-      loggedIn: false
+      selectedTask: null,
+      loggedIn: false,
+      taskStepEdit: false
     };
   },
   created() {
@@ -70,18 +88,33 @@ export default {
         this.$http
           .get(this.URL + this.method.todoGet, this.getRequestHeader())
           .then(
-            data => {
-              this.todos = data.body;
+            response => {
+              this.todos = response.body;
+              // show first todo
+              this.showTodo({
+                todo: this.todos[0],
+                index: 0
+              });
             },
             err => {
               console.log(err.body.message);
             }
-          );
+          )
+          .catch(ex => {
+            console.log(ex);
+          });
       }
     },
     showTodo(obj) {
       this.selectedIndex = obj.index;
       this.selectedTodo = obj.todo;
+      // add edit for element
+      this.showStep(null);
+      this.taskStepEdit = false;
+    },
+    showStep(task) {
+      this.selectedTask = task;
+      this.taskStepEdit = false;
     },
     addNew(todo) {
       console.log("Add new ");
@@ -103,11 +136,15 @@ export default {
     logout() {
       this.loggedIn = this.isLogged();
     }
-  },
-  watch: {}
+  }
 };
 </script>
 
 <style>
-@import url("../node_modules/bootstrap/dist/css/bootstrap.min.css");
+.done {
+  text-decoration: line-through;
+}
+.todo-sidebar {
+  height: calc(100vh);
+}
 </style>

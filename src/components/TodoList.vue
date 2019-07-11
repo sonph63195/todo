@@ -1,7 +1,5 @@
 <template>
-  <div class="todo-list mb-3">
-    <h3 class="display-4">Your List</h3>
-
+  <div class="todo-list mb-3 mt-3">
     <b-list-group v-if="show">
       <b-list-group-item
         v-for="(todo, index) in todos"
@@ -11,14 +9,16 @@
         :class="[selectedIndex === index ? 'active' : '']"
         @click="[$emit('showTodo', {todo: todo, index: index})]"
       >
-        <div class="d-flex w-100 justify-content-between">
-          <h5 class="mb-1" v-text="todo.name"></h5>
+        <div class="d-flex justify-content-between align-items-center">
+          <h5 v-text="todo.name"></h5>
+          <span class="badge badge-info badge-pill">{{ todo.list.length }}</span>
         </div>
-        <p class="mb-1" v-text="todo.description"></p>
       </b-list-group-item>
     </b-list-group>
 
-    <div v-if="!show">Loading...</div>
+    <div v-if="!show" class="p-3 border rounded">
+      <font-awesome-icon icon="spinner" class="fa-spin mr-3" />Loading...
+    </div>
   </div>
 </template>
 
