@@ -1,9 +1,12 @@
 <template>
-  <div id="app"></div>
+  <div id="app">
+    <router-view></router-view>
+  </div>
 </template>
 
 <script>
-/* eslint-disable */
+import "bootstrap/dist/css/bootstrap.css";
+import "bootstrap-vue/dist/bootstrap-vue.css";
 
 export default {
   name: "app"
