@@ -1,25 +1,6 @@
 <template>
   <div id="app">
-    <Header v-on:logout="logout" :loggedIn="loggedIn" />
-    <b-container>
-      <b-row v-if="loggedIn">
-        <b-col cols="12" md="6">
-          <TodoList :todos="todos" :selectedIndex="selectedIndex" v-on:showTodo="showTodo" />
-          <NewTodo v-on:addNew="addNew"></NewTodo>
-        </b-col>
-        <b-col cols="12" md="6">
-          <Todo
-            v-if="selectedTodo != null"
-            :todo="selectedTodo"
-            v-on:updateTodo="todos[selectedIndex] = $event"
-          ></Todo>
-        </b-col>
-      </b-row>
-      <div v-if="!loggedIn" class="show-login_form">
-        <UserAuthorized v-on:login="login"></UserAuthorized>
-      </div>
-    </b-container>
-    <!-- -->
+    <router-view></router-view>
   </div>
 </template>
 
@@ -27,87 +8,7 @@
 import "bootstrap/dist/css/bootstrap.css";
 import "bootstrap-vue/dist/bootstrap-vue.css";
 
-// Import component
-import Header from "./components/Header";
-import TodoList from "./components/TodoList";
-import Todo from "./components/Todo";
-import NewTodo from "./components/NewTodo";
-import UserAuthorized from "./components/UserAuthorized";
-
-// Import Mixins
-import { serverAPIsMixin } from "./components/mixins/serverAPIsMixin";
-
-// code
 export default {
-  name: "app",
-
-  components: {
-    Header,
-    TodoList,
-    Todo,
-    NewTodo,
-    UserAuthorized
-  },
-
-  mixins: [serverAPIsMixin],
-
-  data() {
-    return {
-      todos: [], //list todo
-      selectedIndex: null,
-      selectedTodo: null,
-      loggedIn: false
-    };
-  },
-  created() {
-    this.getTodo();
-  },
-  methods: {
-    getTodo() {
-      this.loggedIn = this.isLogged();
-      if (this.loggedIn) {
-        // get list todo
-        this.$http
-          .get(this.URL + this.method.todoGet, this.getRequestHeader())
-          .then(
-            data => {
-              this.todos = data.body;
-            },
-            err => {
-              console.log(err.body.message);
-            }
-          );
-      }
-    },
-    showTodo(obj) {
-      this.selectedIndex = obj.index;
-      this.selectedTodo = obj.todo;
-    },
-    addNew(todo) {
-      console.log("Add new ");
-      this.$http
-        .post(this.URL + this.method.todoPost, todo, this.getRequestHeader())
-        .then(
-          response => {
-            console.log(response);
-            this.todos.push(response.body);
-          },
-          err => {
-            alert(err.body.message);
-          }
-        );
-    },
-    login() {
-      this.getTodo();
-    },
-    logout() {
-      this.loggedIn = this.isLogged();
-    }
-  },
-  watch: {}
+  name: "app"
 };
 </script>
-
-<style>
-@import url("../node_modules/bootstrap/dist/css/bootstrap.min.css");
-</style>

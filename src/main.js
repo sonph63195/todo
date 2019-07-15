@@ -1,21 +1,18 @@
 import Vue from "vue";
+import { store } from "./_store";
+import { router } from "./_helpers";
 import App from "./App.vue";
+import VueBootstrap from "bootstrap-vue";
+import { library } from "@fortawesome/fontawesome-svg-core";
+import { fas } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 
-import VueResource from "vue-resource";
-import VueCookies from "vue-cookies";
-import BootstrapVue from "bootstrap-vue";
-
-Vue.use(BootstrapVue);
-Vue.use(VueCookies);
-Vue.use(VueResource);
-// set default config
-VueCookies.config("7d");
-// set global cookie
-VueCookies.set("theme", "default");
-VueCookies.set("hover-time", "1s");
-
-Vue.config.productionTip = false;
+Vue.use(VueBootstrap);
+library.add(fas);
+Vue.component("font-awesome-icon", FontAwesomeIcon);
 
 new Vue({
+  store,
+  router,
   render: h => h(App)
 }).$mount("#app");
