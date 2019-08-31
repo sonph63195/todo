@@ -1,6 +1,6 @@
 {
-  "name": "todo-pwa",
-  "short_name": "todo-pwa",
+  "name": "My Job - Todo App",
+  "short_name": "myjob",
   "icons": [
     {
       "src": "./img/icons/android-chrome-192x192.png",
