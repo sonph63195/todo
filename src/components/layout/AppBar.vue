@@ -7,7 +7,6 @@
             <img src="https://avatars0.githubusercontent.com/u/9064066?v=4&s=460" />
           </v-avatar>
         </v-btn>
-        <v-icon>mdi-menu-down</v-icon>
       </template>
 
       <v-card :dark="dark" :light="!dark">
