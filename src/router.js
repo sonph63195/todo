@@ -1,10 +1,12 @@
+/* eslint-disable import/prefer-default-export */
 import Vue from 'vue';
 import Router from 'vue-router';
 import Home from './views/Home.vue';
+import { cookies } from './_helper';
 
 Vue.use(Router);
 
-export default new Router({
+export const router = new Router({
   mode: 'history',
   base: process.env.BASE_URL,
   routes: [
@@ -32,4 +34,20 @@ export default new Router({
       component: () => import('./views/Register.vue'),
     },
   ],
+});
+
+// eslint-disable-next-line consistent-return
+router.beforeEach((to, from, next) => {
+  // redirect to login page if not loged in
+  const pulicPages = ['/sign-in', '/sign-up']; // the list of public pages
+  const authRequired = !pulicPages.includes(to.path); // find path not public pages
+  const loggedIn = cookies.isKey('user'); // will get user in cookies
+
+  if (authRequired && !loggedIn) {
+    return next('/sign-in');
+  } if (!authRequired && loggedIn) {
+    return next('/');
+  }
+
+  next();
 });

@@ -13,6 +13,7 @@
             <h1 class="display-1">Sign in</h1>
           </div>
           <v-form @submit.prevent="login" class="mx-3">
+            <v-alert v-if="error.message" :dismissible="true" type="error" v-text="error.message" />
             <div>
               <v-text-field label="Username" v-model="username" required outlined></v-text-field>
             </div>
@@ -50,6 +51,9 @@ export default {
     loading() {
       return this.$store.state.authorize.state.loading;
     },
+    error() {
+      return this.$store.state.authorize.error;
+    },
   },
   methods: {
     setTheme() {
@@ -57,15 +61,15 @@ export default {
       this.setThemeStore(this.dark);
     },
     login() {
+      const { username, password } = this;
       const { dispatch } = this.$store;
-      dispatch('login');
+      dispatch('login', { username, password });
     },
   },
   data() {
     return {
       username: '',
       password: '',
-      // loading: false
     };
   },
 };

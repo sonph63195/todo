@@ -1,6 +1,6 @@
 <template>
   <div>
-    <v-menu :close-on-content-click="false" offset-y>
+    <v-menu :close-on-content-click="false" transition="scroll-y-transition" offset-y>
       <template v-slot:activator="{ on }">
         <v-btn icon v-on="on">
           <v-avatar size="36">
@@ -21,7 +21,7 @@
                 <v-list-item-subtitle>sonpham3798@gmail.com</v-list-item-subtitle>
               </v-list-item-content>
               <v-list-item-action>
-                <v-btn icon class="red--text">
+                <v-btn icon @click="logout" class="red--text">
                   <v-icon>mdi-logout</v-icon>
                 </v-btn>
               </v-list-item-action>
@@ -60,6 +60,9 @@ export default {
     switchDarkTheme() {
       const val = !this.dark;
       this.$emit('setTheme', val);
+    },
+    logout() {
+      this.$store.dispatch('logout');
     },
   },
   data() {

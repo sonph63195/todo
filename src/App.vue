@@ -11,7 +11,6 @@
     <v-navigation-drawer v-if="!publicPages" app clipped v-model="drawer" :dark="dark">
       <nav-drawer-content></nav-drawer-content>
     </v-navigation-drawer>
-
     <v-content>
       <router-view />
     </v-content>
